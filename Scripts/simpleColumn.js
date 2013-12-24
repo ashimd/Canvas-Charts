@@ -1,19 +1,22 @@
 /// <reference path="common.js" />
+/// <reference path="next-animation-frame.js" />
 
 //Variables............................................................................
 var canvas,
     context,
     chartRect,
+    columns,
     textAngle = 0,
     textRadius = 0,
     increment = 0,
     barCount = 0,
-
     yMax = 0,
     vMax = 0,
     vGap = 0,
-    hMax = 0;
-var offsetT = { x: 0, y: 0 };
+    hMax = 0,
+    drawHeight = 0;
+    maxHeight = 0,
+    canvasOffset = { x: 0, y: 0 };
 
 //Functions............................................................................
 
@@ -25,8 +28,8 @@ function initialize(canvasName, xVal, yVal, comment, commentText, commentBackgro
     var canvasContext = initCanvas(canvas, canvasName, context);
     canvas = canvasContext.cvsElement;
     context = canvasContext.ctxElement;
-    context.lineWidth = 0.5;
-    chartRect = { x1: (1 / 10 * canvas.width), y1: (9 / 10 * canvas.height), x2: (9 / 10 * canvas.width), y2: (1 / 10 * canvas.height) };
+
+    initChart(xVal, yVal);
 
     canvas.addEventListener('mousemove', function (evt) {
         var mousePos = getMousePos(canvas, evt);
@@ -37,14 +40,13 @@ function initialize(canvasName, xVal, yVal, comment, commentText, commentBackgro
 }
 
 function drawColumn(canvasName, grid, shadow, xVal, yVal, columnColor, columnFill, textColor, comment, commentText, commentBackground) {
-
     initialize(canvasName, xVal, yVal, comment, commentText, commentBackground);
-    erase();
+    erase(0, 0, canvas.width, canvas.height);
 
     if (grid)
         drawGrid('lightgray', chartRect.x1 / 4, chartRect.y2 / 4);
 
-    drawChart(xVal, yVal, columnColor, columnFill, textColor, shadow);
+    drawChart(grid, xVal, yVal, columnColor, columnFill, textColor, shadow);
 }
 
 function drawGrid(color, stepx, stepy) {
@@ -79,7 +81,15 @@ function setShadow(shadowColor, setUnset) {
     }
 }
 
-function drawChart(xVal, yVal, columnColor, columnFill, textColor, shadow) {
+function initChart(xVal, yVal) {
+    context.lineWidth = 0.5;
+    chartRect = {
+        x1: (1 / 10 * canvas.width),
+        y1: (9 / 10 * canvas.height),
+        x2: (9 / 10 * canvas.width),
+        y2: (1 / 10 * canvas.height)
+    };
+
     if (xVal.length != yVal.length) {
         context.save();
         context.beginPath();
@@ -88,49 +98,89 @@ function drawChart(xVal, yVal, columnColor, columnFill, textColor, shadow) {
         context.restore();
     }
     else {
+        columns = {
+            x: new Array(xVal.length),
+            y: new Array(xVal.length),
+            width: new Array(xVal.length),
+            height: new Array(xVal.length)
+        }
+
         barCount = xVal.length;
         yMax = getLargestNumber(yVal);
         vMax = Math.round(yMax + (sumOfArray(yVal) / yMax));
         vGap = Math.round(vMax / 10);
         hMax = xVal.length + 1;
 
-        for (increment == 0; increment <= vGap; increment++) {
-            if (increment % 3 == 0) {
-                drawText(context, textColor, 'normal Callibri ' + ((canvas.height + canvas.width) / 32) + 'pt', (1.2 * chartRect.x1), (chartRect.y1 - ((chartRect.y1 - chartRect.y2) / 10) * increment), (increment * vGap), 'right');
-            }
-        }
-        debugger;
         increment = 0;
 
         for (increment == 0; increment < barCount; increment++) {
-            if (shadow)
-                setShadow('gray', true);
-            drawRectangle(context,
-                (chartRect.x1 * 0.7) + (chartRect.x2 / hMax * (increment + 1)),
-                (chartRect.y1 - ((chartRect.y1 - chartRect.y2) / yMax) * yVal[increment]),
-                 (chartRect.x1 * 0.7),
-                 chartRect.y1 - (chartRect.y1 - ((chartRect.y1 - chartRect.y2) / yMax) * yVal[increment]),
-                 columnFill,
-                 columnColor);
-            if (shadow)
-                setShadow('', false);
 
-            if (increment % 3 == 0) {
-                drawText(context, textColor, 'normal Callibri ' + ((canvas.height + canvas.width) / 32) + 'pt', chartRect.x1 + (chartRect.x2 / hMax * (increment + 1)), ((chartRect.y1 * 1.05) + (chartRect.y1 - chartRect.y2) / 30), xVal[increment], 'center');
-            }
+            columns.x[increment] = (chartRect.x1 * 0.7) + (chartRect.x2 / hMax * (increment + 1));
+            columns.y[increment] = (chartRect.y1 - ((chartRect.y1 - chartRect.y2) / yMax) * yVal[increment]);
+            columns.width[increment] = (chartRect.x1 * 0.7);
+            columns.height[increment] = chartRect.y1 - (chartRect.y1 - ((chartRect.y1 - chartRect.y2) / yMax) * yVal[increment]);
         }
+        maxHeight = getLargestNumber(columns.height);
     }
 }
 
-function animateColumns(xVal, yVal, barCount, yMax, vMax, vGap, hMax) {
+function drawChart(grid, xVal, yVal, columnColor, columnFill, textColor, shadow) {
+    animateColumns(grid, xVal, yVal, columnColor, columnFill, textColor, shadow, drawHeight);
+}
 
+function animateColumns(grid, xVal, yVal, columnColor, columnFill, textColor, shadow, drawHeight) {
+    erase();
+    if (grid)
+        drawGrid('lightgray', chartRect.x1 / 4, chartRect.y2 / 4);
 
+    increment = 0;
 
-    requestNextAnimationFrame(animateColumns);
+    for (increment == 0; increment <= vGap; increment++) {
+        if (increment % 3 == 0) {
+            drawText(context, textColor, 'normal Callibri ' + ((canvas.height + canvas.width) / 32) + 'pt', (1.2 * chartRect.x1), (chartRect.y1 - ((chartRect.y1 - chartRect.y2) / 10) * increment), (increment * vGap), 'right');
+        }
+    }
+
+    increment = 0;
+
+    for (increment == 0; increment < barCount; increment++) {
+        if (shadow)
+            setShadow('gray', true);
+        if (columns.height[increment] >= drawHeight) {
+            drawRectangle(context,
+                columns.x[increment],
+                columns.y[increment] + columns.height[increment] - drawHeight,
+                 columns.width[increment],
+                 drawHeight,
+                 columnFill,
+                 columnColor);
+        }
+        else {
+            drawRectangle(context,
+                columns.x[increment],
+                columns.y[increment],
+                 columns.width[increment],
+                 columns.height[increment],
+                 columnFill,
+                 columnColor);
+        }
+        if (shadow)
+            setShadow('', false);
+
+        if (increment % 3 == 0) {
+            drawText(context, textColor, 'normal Callibri ' + ((canvas.height + canvas.width) / 32) + 'pt', chartRect.x1 + (chartRect.x2 / hMax * (increment + 1)), ((chartRect.y1 * 1.05) + (chartRect.y1 - chartRect.y2) / 30), xVal[increment], 'center');
+        }
+    }
+    drawHeight += 1;
+    if (drawHeight <= maxHeight) {
+        requestAnimationFrame(function () {
+            animateColumns(grid, xVal, yVal, columnColor, columnFill, textColor, shadow, drawHeight)
+        });
+    }
+
 }
 
 function hoverColumn(mouseX, mouseY, xVal, yVal, comment, commentText, commentBackground) {
-    debugger;
     /*customizable options*/
     bordercolor = '#666666';
     textcolor = commentText;
@@ -150,62 +200,18 @@ function hoverColumn(mouseX, mouseY, xVal, yVal, comment, commentText, commentBa
     increment = 0;
 
     for (increment == 0; increment < barCount; increment++) {
-        if (mouseX >= ((chartRect.x1 * 0.7) + (chartRect.x2 / hMax * (increment + 1)) && mouseX <= (chartRect.x2 / hMax * (increment + 1)))) {
-            if (mouseY >= ((chartRect.y1 - ((chartRect.y1 - chartRect.y2) / yMax) * yVal[increment])) && mouseY <= (chartRect.y1 - (chartRect.y1 - ((chartRect.y1 - chartRect.y2) / yMax) * yVal[increment]) - (chartRect.y1 - ((chartRect.y1 - chartRect.y2) / yMax) * yVal[increment]))) {
+        if (mouseX >= columns.x[increment] && mouseX <= (columns.x[increment] + columns.width[increment])) {
+            if (mouseY >= columns.y[increment] && mouseY <= columns.y[increment] + columns.height[increment]) {
                 var message = yVal[increment] + comment + xVal[increment];
                 context.strokeStyle = commentText;
                 context.fillStyle = commentText;
                 $('.tooltip').remove();
-                $('body').append('<div class="' + cls + ' tooltip" style="left:' + (offsetT.x + mouseX + 10) + 'px;top:' + (yVal[increment] - 5) + 'px;border-color:' + bordercolor + ';background-color:' + bgcolor + ';color:' + textcolor + ';border-width:' + borderwidth + 'px">' + message + '<canvas id="tip" width="28" height="18" style="bottom:' + tipbot + 'px;"></canvas></div>');
+                $('body').append('<div class="' + cls + ' tooltip" style="left:' + (canvasOffset.x + mouseX - ((maxHeight / barCount) + 4* hMax)) + 'px;top:' + (columns.y[increment] - ((maxHeight / barCount) + hMax)) + 'px;border-color:' + bordercolor + ';background-color:' + bgcolor + ';color:' + textcolor + ';border-width:' + borderwidth + 'px">' + message + '<canvas id="tip" width="15" height="18" style="bottom:' + tipbot + 'px;"></canvas></div>');
                 $(this).mouseleave(function () { $('.tooltip').remove() });
             }
         }
         else
             $(this).mouseleave(function () { $('.tooltip').remove() });
-    }
-
-    //for (i = 0; i < xBaseArr.length; i++) {
-    //    if (mouseX >= xBaseArr[i] && mouseX <= (xBaseArr[i] + widthArr[i])) {
-    //        if (mouseY >= yBaseArr[i] && mouseY <= (yBaseArr[i] + heightArr[i])) {
-    //            var message = quarterIdArr[i] + " Sales Value : " + formatCurrency(totalSalesArr[i]);
-    //            switch (i) {
-    //                case 0:
-    //                    ctxT.strokeStyle = "rgba(237, 14, 121, 1)";
-    //                    ctxT.fillStyle = "rgba(252, 169, 210, 1)";
-    //                    break;
-    //                case 1:
-    //                    ctxT.strokeStyle = "rgba(181, 212, 46, 1)";
-    //                    ctxT.fillStyle = "rgba(211, 231, 135, 1)";
-    //                    break;
-    //                case 2:
-    //                    ctxT.strokeStyle = "rgba(239, 92, 22, 1)";
-    //                    ctxT.fillStyle = "rgba(249, 187, 157, 1)";
-    //                    break;
-    //            }
-    //            roundRect(ctx, xBaseArr[i], yBaseArr[i], widthArr[i], heightArr[i], 2, true, true);
-    //            $('.tooltip').remove();
-    //            $('body').append('<div class="' + cls + ' tooltip" style="left:' + (offsetT.x + mouseX + 10) + 'px;top:' + (yBaseArr[i] - 5) + 'px;border-color:' + bordercolor + ';background-color:' + bgcolor + ';color:' + textcolor + ';border-width:' + borderwidth + 'px">' + message + '<canvas id="tip" width="28" height="18" style="bottom:' + tipbot + 'px;"></canvas></div>');
-    //            $(this).mouseleave(function () { $('.tooltip').remove() });
-    //        }
-    //        else {
-    //            switch (i) {
-    //                case 0:
-    //                    ctxT.strokeStyle = "rgba(237, 14, 121, 1)";
-    //                    ctxT.fillStyle = "rgba(237, 14, 121, 1)";
-    //                    break;
-    //                case 1:
-    //                    ctxT.strokeStyle = "rgba(181, 212, 46, 1)";
-    //                    ctxT.fillStyle = "rgba(181, 212, 46, 1)";
-    //                    break;
-    //                case 2:
-    //                    ctxT.strokeStyle = "rgba(239, 92, 22, 1)";
-    //                    ctxT.fillStyle = "rgba(239, 92, 22, 1)";
-    //                    break;
-    //            }
-    //            roundRect(ctxT, xBaseArr[i], yBaseArr[i], widthArr[i], heightArr[i], 2, true);
-    //            $(this).mouseleave(function () { $('.tooltip').remove() });
-    //        }
-    //    }
-    //}
+    }    
 }
 

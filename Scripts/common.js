@@ -1,3 +1,76 @@
+//#region request_animation_frame_shim
+var requestAnimationFrameImplementation = window.requestAnimationFrame;
+//        requestAnimationFrame
+//            (function () {
+//                return (
+//                    window.requestAnimationFrame ||
+//                    window.webkitRequestAnimationFrame ||
+//                    window.mozRequestAnimationFrame ||
+//                    window.oRequestAnimationFrame ||
+//                    window.msRequestAnimationFrame ||
+//                    function (/* function */callback) {
+//                        window.setTimeout(callback, 1000 / 60);
+//                    }
+//                );
+//            })();
+
+//(function () {
+//    var requestAnimationFrame = window.requestAnimationFrame || window.mozRequestAnimationFrame ||
+//                              window.webkitRequestAnimationFrame || window.msRequestAnimationFrame;
+//    window.requestAnimationFrame = requestAnimationFrame;
+//})();
+
+// look for vendor prefixed function
+if (typeof requestAnimationFrameImplementation === 'undefined') {
+    var vendors = ['webkit', 'moz', 'ms', 'o'];
+    var i = 0;
+    var len = vendors.length;
+    while (i < len && typeof requestAnimationFrameImplementation === 'undefined') {
+        requestAnimationFrameImplementation = window[vendors[i] + 'RequestAnimationFrame'];
+        ++i;
+    }
+}
+
+// build an implementation based on setTimeout
+if (typeof requestAnimationFrameImplementation === 'undefined') {
+    var lastFrameTime = 0;
+    requestAnimationFrameImplementation = function (callback) {
+        var currentTime;
+        if (BrowserISIE()) {
+            if (GetIEVersion() < 9) {
+                Date.now = Date.now || function () { return +new Date; };
+                currentTime = Date.now;
+            }
+            else {
+                currentTime = Date.now();
+            }
+        }
+        else {
+            currentTime = Date.now();
+        }
+
+        // schedule the callback to target 60fps, 16.7ms per frame,
+        // accounting for the time taken by the callback
+        var delay = Math.max(16 - (currentTime - lastFrameTime), 0);
+        lastFrameTime = currentTime + delay;
+
+        return setTimeout(function () {
+            callback(lastFrameTime);
+        }, delay);
+    };
+}
+
+
+var requestAnimationFrame = function (callback) {
+    // we need this extra wrapper function because the native requestAnimationFrame
+    // functions must be invoked on the global scope (window), which is not the case
+    // if invoked as Cesium.requestAnimationFrame(callback)
+    requestAnimationFrameImplementation(callback);
+};
+
+//#endregion
+
+
 /**
 * Initialize the canvas based on the browser compatibility.
 * @param {Canvas} canvasElement
