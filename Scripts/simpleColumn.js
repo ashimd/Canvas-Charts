@@ -40,6 +40,7 @@ function initialize(canvasName, xVal, yVal, comment, commentText, commentBackgro
 }
 
 function drawColumn(canvasName, grid, shadow, xVal, yVal, columnColor, columnFill, textColor, comment, commentText, commentBackground) {
+    debugger;
     initialize(canvasName, xVal, yVal, comment, commentText, commentBackground);
     erase(0, 0, canvas.width, canvas.height);
 

@@ -73,6 +73,22 @@ function drawPlotArea(plotArea, plotColor, plotWidth, noYears, maxVal) {
     }
 }
 
+
+function setShadow(shadowColor, setUnset) {
+    if (setUnset) {
+        context3d.shadowColor = shadowColor;
+        context3d.shadowOffsetX = 2;
+        context3d.shadowOffsetY = 2;
+        context3d.shadowBlur = 4;
+    }
+    else {
+        context3d.shadowColor = undefined;
+        context3d.shadowOffsetX = 0;
+        context3d.shadowOffsetY = 0;
+        context3d.shadowBlur = 0;
+    }
+}
+
 function drawCube(noYears, valYears, plotArea) {
     //roundRect(context3d,
     //    plotArea.cod1[0],
@@ -85,20 +101,37 @@ function drawCube(noYears, valYears, plotArea) {
 
     var slope = (plotArea.cod4[1] - plotArea.cod3[1]) / (plotArea.cod4[0] - plotArea.cod3[0]);
 
-    context3d.beginPath();
-    context3d.lineWidth = 1;
+    var cubeDim = {
+        cod1:[(1.1 * (plotArea.cod3[0] * 0.95)), (0.98 * plotArea.cod3[1] * 1.05)], 
+        cod2:[(1.1 * plotArea.cod3[0] * 1.10), (0.98 * (plotArea.cod3[1] + (slope * (plotArea.cod3[0] * 0.75))))],
+        cod3:[(plotArea.cod3[0] * 0.95), (plotArea.cod3[1] * 1.05)], 
+        cod4:[(plotArea.cod3[0] * 1.10), (plotArea.cod3[1] + (slope * (plotArea.cod3[0] * 0.75)))] 
+    }
+
+
+    context3d.lineWidth = 5;
     context3d.lineJoin = 'round';
     context3d.strokeStyle = 'skyblue';
     context3d.fillStyle = 'skyblue';
-    context3d.moveTo(plotArea.cod3[0] * 0.95, plotArea.cod3[1] * 1.05);
-    context3d.lineTo(plotArea.cod3[0] * 1.25, plotArea.cod3[0] * 0.3 * slope);
-    //context3d.lineTo(plotArea.cod4[0], plotArea.cod4[1]);
-    //context3d.lineTo(plotArea.cod3[0], plotArea.cod3[1]);
-    //context3d.lineTo(plotArea.cod1[0], plotArea.cod1[1]);
+
+    //setShadow('gray', true);
+
+    context3d.beginPath();
+    context3d.moveTo(cubeDim.cod3[0], cubeDim.cod3[1]);
+    context3d.lineTo(cubeDim.cod4[0], cubeDim.cod4[1]);
+    context3d.lineTo(cubeDim.cod2[0], cubeDim.cod2[1]);
+    context3d.lineTo(cubeDim.cod1[0], cubeDim.cod1[1]);
+    context3d.lineTo(cubeDim.cod3[0], cubeDim.cod3[1]);
+
+    context3d.lineTo(cubeDim.cod3[0], cubeDim.cod3[1] * 0.97);
+    context3d.lineTo(cubeDim.cod1[0], cubeDim.cod1[1] * 0.97);
+    context3d.lineTo(cubeDim.cod2[0], cubeDim.cod2[1] * 0.97);
+    context3d.lineTo(cubeDim.cod2[0], cubeDim.cod2[1]);
     context3d.stroke();
-    //context3d.fill();
+    context3d.fill();
     context3d.closePath();
 
+    //setShadow('', false);
 
     //context3d.arc(300, 190, 150, 0, Math.PI * 2, false); // Outer: CCW
     //context3d.arc(300, 190, 100, 0, Math.PI * 2, true); // Inner: CW

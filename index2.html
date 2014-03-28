@@ -10,9 +10,8 @@
     <script type="text/javascript" src="Scripts/html5.js"></script>
     <script src="Scripts/excanvas.js" type="text/javascript"></script>
     <script src="Scripts/common.js" type="text/javascript"></script> 
-    <script src="Scripts/next-animation-frame.js" type="text/javascript"></script> 
-    <script src="Scripts/simpleColumn.js" type="text/javascript"></script>  
-    <!--<script src="Scripts/3dColumn.js" type="text/javascript"></script>-->
+    <script src="Scripts/next-animation-frame.js" type="text/javascript"></script>
+    <script src="Scripts/3dColumn.js" type="text/javascript"></script>
 
     <script type="text/javascript">
         function drawCharts() {
@@ -48,19 +47,13 @@
             yearVal[4][0] = '50';
             yearVal[4][1] = '85';
             
-
-            //fillColor = ['skyblue', 'magenta', 'lightyellow', 'lightgreen'];                
-            //drawBar('canvas', chartHeader, title, colors.lineColor, false, colors.gridColor, xVal, yVal, strokeColor, fillColor);
-                
-            drawColumn('canvas', true, true, xVal, yVal, 'rgba(240, 126, 72, 1)', 'solid', 'gray', commentTitle, 'white', 'gray');
-            //draw3dColumn('canvas3dColumn', year, yearVal);
+            draw3dColumn('canvas3dColumn', year, yearVal);
         }
     </script>
 </head>
 <body onload="drawCharts();">    
-    <div id="canvasHeader" class="canvasHeader">
-        <canvas id="canvas" class="canvas" height="250px" width="450px">Canvas Not Supported</canvas>        
-        <!--<canvas id="canvas3dColumn" class="canvas" height="450px" width="600px">Canvas Not Supported</canvas>-->
+    <div id="canvasHeader" class="canvasHeader">        
+        <canvas id="canvas3dColumn" class="canvas" height="450px" width="600px">Canvas Not Supported</canvas>
     </div>
     
 </body>
